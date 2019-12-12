@@ -4,9 +4,34 @@ on: push
 
 jobs:
   msys2:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v1
-      - run: |
-          git config user.name
-          git config user.email
+      - name: Cache msys2
+        id: cache-msys2
+        uses: actions/cache@v1
+        with:
+          path: msys64
+          key: msys2
+      - name: Install msys2
+        if: steps.cache-msys2.outputs.cache-hit != 'true'
+        run: |
+          (New-Object net.webclient).DownloadFile("http://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20190524.tar.xz","msys2.tar.xz")
+          tar xf msys2.tar.xz -C $env:GITHUB_WORKSPACE.Replace("\", "/")
+      - name: Initialize msys2
+        run: |
+          $ps1_script = @"
+            param ([string]`$script)
+            `$ErrorActionPreference = "stop"
+            `$script = "/" + `$script.Replace("\", "/").Replace(":", "")
+            & "`$env:GITHUB_WORKSPACE\msys64\usr\bin\bash" -l `$script
+          "@
+          $ps1_script | Out-File "$env:GITHUB_WORKSPACE\msys2.ps1"
+          $env:GITHUB_WORKSPACE\msys64\usr\bin\bash -l -c 'echo $PATH'
+
+      - name: Test Script
+        shell: bash -c 'echo {0}'
+        run: |
+          uname -a
+          echo $PATH
+          echo $PWD
