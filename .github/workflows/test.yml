@@ -1,0 +1,12 @@
+name: test
+
+on: push
+
+jobs:
+  msys2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          git config user.name
+          git config user.email
